@@ -1,4 +1,3 @@
-
 import Tile from '../components/tile';
 
 export default function Home() {
