@@ -1,18 +1,6 @@
 import products from "./data.js";
+import { ProductType } from "../../../lib/ProductType";
 import {NextRequest, NextResponse} from 'next/server';
-
-type Product = {
-    "id": number;
-    "manufacturer": string;
-    "model": string;
-    "price": number;
-    "weight": string;
-    "fiber": string;
-    "tags": string[];
-    "color": string;
-    "description": string;
-    "image": string;
-}
 
 type Validator = string[];
 type Sanitizer = (param:string|null, validator:Validator) => string[];
@@ -48,9 +36,9 @@ export async function GET(request: NextRequest) {
     const color = sanitize(searchParams.get('color'), validColors);
     const sortby = sanitize(searchParams.get('sortby'), validSortBy);
     const sortorder = sanitize(searchParams.get('sortorder'), validSortOrder);
-    const page = searchParams.get('page') === null ? 1 : parseInt(searchParams.get('page') || "1");
+    let page = searchParams.get('page') === null ? 1 : parseInt(searchParams.get('page') || "1");
 
-    let returnProducts:Product[] = [];
+    let returnProducts:ProductType[] = [];
 
     //If an ID was supplied, fetch that product and return it
     if (id !== null) {
@@ -84,8 +72,8 @@ export async function GET(request: NextRequest) {
     //Step 2: Sort the results.
     //sortby should only contain 1 value, if any, but in case more than one show up, use the first
     const sortField = sortby.length > 0 ? sortby[0] : 'weight';
-    returnProducts.sort((a:Product, b:Product) => {
-        if (a[sortField as keyof Product] < b[sortField as keyof Product]) {
+    returnProducts.sort((a:ProductType, b:ProductType) => {
+        if (a[sortField as keyof ProductType] < b[sortField as keyof ProductType]) {
             return -1;
         } else if (a > b) {
             return 1;
@@ -101,16 +89,17 @@ export async function GET(request: NextRequest) {
 
     //Step 4: Return only the subset of results that correspond to the page.
     //If the page number is out of range, negative, return the first page
-    //Default page length is 9
-    const pageLimit = 9;
-    const maxPages = returnProducts.length/pageLimit + Math.ceil(returnProducts.length%pageLimit/10);
+    //Default page length is 15
+    const pageLimit = 15;
+    const maxPages = Math.ceil(returnProducts.length/pageLimit);
     let start = 0;
     let end = 0;
     if (page > maxPages || page < 1) {
         start = 1;
+        page = 1;
     }
 
     start = (page - 1) * pageLimit
     end = start + pageLimit;
-    return NextResponse.json(returnProducts.slice(start, end), {status: 200});
+    return NextResponse.json({products: returnProducts.slice(start, end), meta:{page:page, maxPages: maxPages, pageLimit: pageLimit, sortBy: sortby, sortOrder: sortorder}}, {status: 200});
 }
