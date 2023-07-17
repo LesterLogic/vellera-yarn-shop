@@ -1,11 +1,12 @@
 import { Dispatch, SetStateAction, useState } from 'react';
 
 type FilterProps = (
-    params: {label:string, options:string[], action:Dispatch<SetStateAction<string[]>>}
+    params: {label:string, options:string[], action:Dispatch<SetStateAction<string[]>>, defaultValue?:string[]}
 ) => JSX.Element;
 
-const Filter:FilterProps = ({label, options, action}) => {
-    const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
+const Filter:FilterProps = ({label, options, action, defaultValue=[]}) => {
+
+    const [selectedFilters, setSelectedFilters] = useState<string[]>(defaultValue);
 
     const updateFilter = (option:string):void => {
         let myOptions = [...selectedFilters];
@@ -22,11 +23,11 @@ const Filter:FilterProps = ({label, options, action}) => {
     return (
         <div>
             <div className="text-lg font-bold text-stone-50 text-center mb-2">{label}</div>
-            <div className="flex flex-row justify-center flex-wrap gap-x-2 gap-y-2">
+            <div className="grid grid-cols-1 lg:grid-cols-3 md:grid-cols-2 grid-rows-auto gap-x-2 gap-y-2">
                 {options.map(option => {
                     return (
-                        <div key={`${label}_${option}`} className={(selectedFilters.includes(option) ? "bg-stone-100 text-stone-950" : "bg-stone-600 text-stone-100") + " py-1 px-4 cursor-pointer inline-block hover:bg-stone-300 hover:text-stone-950 rounded"}>
-                            <div className="text-center" onClick={() => updateFilter(option)}>{option.charAt(0).toUpperCase() + option.slice(1)}</div>
+                        <div key={`${label}_${option}`}  data-testid="filter" title={`${option} filter`} onClick={() => updateFilter(option)} className={(selectedFilters.includes(option) ? 'bg-stone-800 text-stone-100' : 'bg-stone-100 text-stone-950') + " px-4 cursor-pointer inline-block rounded border-2 border-stone-400 hover:bg-stone-800 hover:text-stone-100"}>
+                            <div className="text-center">{option.charAt(0).toUpperCase() + option.slice(1)}</div>
                         </div>
                     );
                 })}

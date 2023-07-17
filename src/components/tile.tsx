@@ -10,7 +10,7 @@ interface TileProps {
 
 const Tile = (args: TileProps) => {
     return (
-        <Link href={args.url} className={`
+        <Link href={args.url} title={args.header} className={`
             ${args.background}
             w-full
             h-[100vw]

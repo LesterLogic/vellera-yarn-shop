@@ -5,6 +5,7 @@ import {NextRequest, NextResponse} from 'next/server';
 type Validator = string[];
 type Sanitizer = (param:string|null, validator:Validator) => string[];
 
+const validProducts:Validator = ["yarn", "patterns", "tools"];
 const validFibers:Validator = ["wool", "cotton", "alpaca"];
 const validWeights:Validator = ["fingering", "sport", "dk", "worsted"];
 const validColors:Validator = ["black", "gray", "purple", "blue", "green", "yellow", "orange", "red", "white"];
@@ -31,6 +32,7 @@ const sanitize: Sanitizer = (param, validator) => {
 export async function GET(request: NextRequest) {
     const {searchParams} = new URL(request.url);
     const id = searchParams.get('id') === null ? null : parseInt(searchParams.get('id') || "");
+    const product = searchParams.get('product') === null ? ["yarn"] : sanitize(searchParams.get('product'), validProducts);
     const fiber = sanitize(searchParams.get('fiber'), validFibers);
     const weight = sanitize(searchParams.get('weight'), validWeights);
     const color = sanitize(searchParams.get('color'), validColors);
@@ -52,8 +54,12 @@ export async function GET(request: NextRequest) {
 
     //Step 1: Filter the results based on the selected fiber, weight, and color.
     //Find the intersection of each set of the selected filters and the product tags
-    const tags = [fiber, weight, color];
+    const tags = [product, fiber, weight, color];
     returnProducts = products.filter(prod => {
+        if (product.length > 0) {
+           let productsect = product.filter(tag => prod.tags.includes(tag));
+           if (productsect.length === 0) return false;
+        }
         if (fiber.length > 0) {
             let fibersect = fiber.filter(tag => prod.tags.includes(tag));
             if (fibersect.length === 0) return false;
