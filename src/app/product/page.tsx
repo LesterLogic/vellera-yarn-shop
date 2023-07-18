@@ -5,6 +5,7 @@ import Filter from './components/Filter';
 import Pagination from './components/Pagination';
 import { ProductType } from '../../lib/ProductType';
 import Image from 'next/image';
+import Link from 'next/link';
 
 export default function Product() {
     const [showProducts, setShowProducts] = useState<ProductType[]>([]);
@@ -71,7 +72,7 @@ export default function Product() {
                     ">
                         {showProducts.length > 0 && showProducts.map((prod:ProductType) => {
                             return (
-                                    <div className="w-full h-max bg-stone-100 border-2 rounded-lg" data-testid="product-tile">
+                                    <Link href={`/detail/${prod.id}`} className="w-full h-max bg-stone-100 border-2 rounded-lg" data-testid="product-tile">
                                         <Image src={prod.image} width={200} height={200} alt={`${prod.manufacturer} ${prod.model}`} className="w-full h-max rounded-t-lg" />
                                         <div className="p-4 text-center">
                                             <div className="font-black">{prod.manufacturer} {prod.model}</div>
@@ -80,7 +81,7 @@ export default function Product() {
                                             <div className="">{prod.fiber}</div>
                                             <div className="font-black text-xl mt-2">{USDollar.format(prod.price)}</div>
                                         </div>
-                                    </div>
+                                    </Link>
                             )
                         })
                         }

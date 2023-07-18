@@ -46,10 +46,11 @@ export async function GET(request: NextRequest) {
     if (id !== null) {
         for (let x=0; x<products.length; x++) {
             if (products[x].id === id) {
-                returnProducts.push(products[x]);
-                return NextResponse.json(returnProducts, {status: 200});
+                return NextResponse.json(products[x], {status: 200});
             }
         }
+
+        return NextResponse.json(null, {status: 404});
     }
 
     //Step 1: Filter the results based on the selected fiber, weight, and color.
