@@ -7,6 +7,12 @@ import Link from 'next/link';
 
 const AppNav: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
+    const navDestinations = [
+        {"label":"Yarn", "url":"/product/yarn"},
+        {"label":"Patterns", "url":"/product/patterns"},
+        {"label":"Tools", "url":"/product/tools"},
+        {"label":"Learning Center", "url":"/"},
+    ];
 
     const toggleDropdown = (state?: boolean) => {
         if (state !== undefined) {
@@ -39,19 +45,17 @@ const AppNav: React.FC = () => {
                 <i className="fal fa-bars text-white" onClick={() => { toggleDropdown()}}></i>
                 {isOpen && (
                 <ul className="border-4 border-stone-200 bg-stone-800 text-stone-200 absolute top-1 left-5">
-                    <MobileNavItem url="/product" content="Yarn" />
-                    <MobileNavItem url="/product" content="Patterns" />
-                    <MobileNavItem url="/product" content="Tools" />
-                    <MobileNavItem url="/" content="Learning Center" />
+                    {navDestinations.map(dest => {
+                        return <MobileNavItem url={dest.url} content={dest.label} key={`global-nav-${dest.label}`} />
+                    })}
                 </ul>
                 )}
             </nav>
             <nav className="w-4/12 text-white hidden lg:block pl-4">
                 <ul className="flex flex-row justify-start">
-                    <NavItem url="/product" content="Yarn" />
-                    <NavItem url="/product" content="Patterns" />
-                    <NavItem url="/product" content="Tools" />
-                    <NavItem url="/" content="Learning Center" />
+                    {navDestinations.map(dest => {
+                        return <NavItem url={dest.url} content={dest.label} key={`global-nav-${dest.label}`} />
+                    })}
                 </ul>
             </nav>
         </>

@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import Filter from './components/Filter';
-import Pagination from './components/Pagination';
-import { ProductType } from '../../lib/ProductType';
+import Filter from '../components/Filter';
+import Pagination from '../components/Pagination';
+import { YarnType } from '../../../lib/ProductType';
 import Image from 'next/image';
 import Link from 'next/link';
 
 export default function Product() {
-    const [showProducts, setShowProducts] = useState<ProductType[]>([]);
+    const [showProducts, setShowProducts] = useState<YarnType[]>([]);
     const [currentPage, setCurrentPage] = useState<number>(1);
     const [maxPages, setMaxPages] = useState<number>(1);
     const [fiberFilters, setFiberFilters] = useState<string[]>([]);
@@ -35,7 +35,6 @@ export default function Product() {
         params.append('sortorder', sortOrder);
 
         const url = `/api/product?${params.toString()}`;
-
         const res = await fetch(url);
         const products = await res.json();
         setShowProducts(products.products);
@@ -70,7 +69,7 @@ export default function Product() {
                     lg:grid-cols-4
                     xl:grid-cols-5
                     ">
-                        {showProducts.length > 0 && showProducts.map((prod:ProductType) => {
+                        {showProducts.length > 0 && showProducts.map((prod:YarnType) => {
                             return (
                                     <Link href={`/detail/${prod.id}`} className="w-full h-max bg-stone-100 border-2 rounded-lg" data-testid="product-tile">
                                         <Image src={prod.image} width={200} height={200} alt={`${prod.manufacturer} ${prod.model}`} className="w-full h-max rounded-t-lg" />

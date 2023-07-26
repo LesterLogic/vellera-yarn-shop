@@ -1,16 +1,12 @@
-import products from "./data.js";
-import { ProductType } from "../../../lib/ProductType";
+import { Rubik_Beastly } from "next/font/google";
+import db from "../../../data/db";
+import { ProductType, YarnType, PatternType } from "../../../lib/ProductType";
 import {NextRequest, NextResponse} from 'next/server';
 
 type Validator = string[];
 type Sanitizer = (param:string|null, validator:Validator) => string[];
 
 const validProducts:Validator = ["yarn", "patterns", "tools"];
-const validFibers:Validator = ["wool", "cotton", "alpaca"];
-const validWeights:Validator = ["fingering", "sport", "dk", "worsted"];
-const validColors:Validator = ["black", "gray", "purple", "blue", "green", "yellow", "orange", "red", "white"];
-const validSortBy:Validator = ["fiber", "weight", "color", "price"];
-const validSortOrder:Validator = ["asc", "desc"];
 
 const sanitize: Sanitizer = (param, validator) => {
     let retval:string[] = [];
@@ -26,87 +22,137 @@ const sanitize: Sanitizer = (param, validator) => {
     return retval;
 }
 
+const buildProductQuery = (type:string, id:number) => {
+    let query = "";
+    switch (type) {
+        case 'yarn':
+            query = `SELECT products.*, product_yarn.weight, product_yarn.fiber, product_yarn.color, product_yarn.yardage, product_yarn.gauge, product_yarn.hook, product_yarn.needle, product_yarn.texture, product_yarn.care FROM products LEFT JOIN product_yarn ON products.id=product_yarn.prod_id WHERE products.id=${id}`;
+            break;
+        case 'patterns':
+            break;
+        case 'tools':
+            break;
+        default:
+    }
 
-//Normally the functionality for this request would be in a database and that call would be made here however,
-//for the sake of this project, since I am using a static data set, I'm simulating the filter and sort operations.
+    return query;
+};
+
+const buildYarnQuery = (searchParams:URLSearchParams) => {
+    const validFibers:Validator = ["wool", "cotton", "alpaca"];
+    const validWeights:Validator = ["fingering", "sport", "dk", "worsted"];
+    const validColors:Validator = ["black", "gray", "purple", "blue", "green", "yellow", "orange", "red", "white"];
+    //const validSortBy:Validator = ["fiber", "weight", "color", "price"];
+    //const validSortOrder:Validator = ["asc", "desc"];
+
+    const fiber = sanitize(searchParams.get('fiber'), validFibers);
+    const weight = sanitize(searchParams.get('weight'), validWeights);
+    const color = sanitize(searchParams.get('color'), validColors);
+    //const sortby = sanitize(searchParams.get('sortby'), validSortBy);
+    //const sortorder = sanitize(searchParams.get('sortorder'), validSortOrder);
+
+    let maxQuery = "SELECT COUNT(*) as maxRows, products.id FROM products";
+    let rowQuery = "SELECT products.*, product_yarn.weight, product_yarn.fiber, product_yarn.color, product_yarn.yardage, product_yarn.gauge, product_yarn.hook, product_yarn.needle, product_yarn.texture, product_yarn.care FROM products LEFT JOIN product_yarn ON products.id=product_yarn.prod_id";
+    
+    //Build the WHERE clause
+    if (fiber.length > 0 || weight.length > 0 || color.length > 0) {
+        let whereClause = " WHERE ";
+        let filters:string[] = [];
+        if (fiber.length > 0) {
+            let fiberClause:string[] = [];
+            fiber.forEach(f => {
+                fiberClause.push(`tags LIKE '%${f}%'`)
+            });
+            filters.push(`(${fiberClause.join(' OR ')})`);
+        }
+        if (weight.length > 0) {
+            let weightClause:string[] = [];
+            weight.forEach(w => {
+                weightClause.push(`tags LIKE '%${w}%'`)
+            });
+            filters.push(`(${weightClause.join(' OR ')})`);
+        }
+        if (color.length > 0) {
+            let colorClause:string[] = [];
+            color.forEach(c => {
+                colorClause.push(`tags LIKE '%${c}%'`)
+            });
+            filters.push(`(${colorClause.join(' OR ')})`);
+        }
+        whereClause += filters.join(' AND ');
+        maxQuery += whereClause;
+        rowQuery += whereClause;
+    }
+
+    return [rowQuery, maxQuery];
+};
+
+const buildPatternQuery = (searchParams:URLSearchParams) => {
+    return ["", ""];
+};
+
+const buildToolQuery = (searchParams:URLSearchParams) => {
+    return ["", ""];
+};
+
 export async function GET(request: NextRequest) {
     const {searchParams} = new URL(request.url);
     const id = searchParams.get('id') === null ? null : parseInt(searchParams.get('id') || "");
     const product = searchParams.get('product') === null ? ["yarn"] : sanitize(searchParams.get('product'), validProducts);
-    const fiber = sanitize(searchParams.get('fiber'), validFibers);
-    const weight = sanitize(searchParams.get('weight'), validWeights);
-    const color = sanitize(searchParams.get('color'), validColors);
-    const sortby = sanitize(searchParams.get('sortby'), validSortBy);
-    const sortorder = sanitize(searchParams.get('sortorder'), validSortOrder);
-    let page = searchParams.get('page') === null ? 1 : parseInt(searchParams.get('page') || "1");
-
-    let returnProducts:ProductType[] = [];
-
-    //If an ID was supplied, fetch that product and return it
-    if (id !== null) {
-        for (let x=0; x<products.length; x++) {
-            if (products[x].id === id) {
-                return NextResponse.json(products[x], {status: 200});
-            }
-        }
-
-        return NextResponse.json(null, {status: 404});
-    }
-
-    //Step 1: Filter the results based on the selected fiber, weight, and color.
-    //Find the intersection of each set of the selected filters and the product tags
-    const tags = [product, fiber, weight, color];
-    returnProducts = products.filter(prod => {
-        if (product.length > 0) {
-           let productsect = product.filter(tag => prod.tags.includes(tag));
-           if (productsect.length === 0) return false;
-        }
-        if (fiber.length > 0) {
-            let fibersect = fiber.filter(tag => prod.tags.includes(tag));
-            if (fibersect.length === 0) return false;
-        }
-        if (weight.length > 0) {
-            let weightsect = weight.filter(tag => prod.tags.includes(tag));
-            if (weightsect.length === 0) return false;
-        }
-        if (color.length > 0) {
-            let colorsect = color.filter(tag => prod.tags.includes(tag));
-            if (colorsect.length === 0) return false;
-        }
-        return true;
-    });
-
-    //Step 2: Sort the results.
-    //sortby should only contain 1 value, if any, but in case more than one show up, use the first
-    const sortField = sortby.length > 0 ? sortby[0] : 'weight';
-    returnProducts.sort((a:ProductType, b:ProductType) => {
-        if (a[sortField as keyof ProductType] < b[sortField as keyof ProductType]) {
-            return -1;
-        } else if (a > b) {
-            return 1;
-        } else {
-            return 0;
-        }
-    });
-
-    //Step 3: If sortorder is 'desc' then we reverse the returnProduct array
-    if (sortorder.length > 0 && sortorder[0] === "desc") {
-        returnProducts.reverse();
-    }
-
-    //Step 4: Return only the subset of results that correspond to the page.
-    //If the page number is out of range, negative, return the first page
-    //Default page length is 15
     const pageLimit = 15;
-    const maxPages = Math.ceil(returnProducts.length/pageLimit);
-    let start = 0;
-    let end = 0;
-    if (page > maxPages || page < 1) {
-        start = 1;
-        page = 1;
+    let rowQuery = "";
+    let maxQuery = "";
+    let page = searchParams.get('page') === null ? 1 : parseInt(searchParams.get('page') || "1");
+    let maxPages = 1;
+
+    if (id !== null) {
+        rowQuery = buildProductQuery(product[0], id);
+    } else {
+        switch (product[0]) {
+            case 'yarn':
+                [rowQuery, maxQuery] = buildYarnQuery(searchParams);
+                break;
+            case 'patterns':
+                [rowQuery, maxQuery] = buildPatternQuery(searchParams);
+                break;
+            case 'tools':
+                [rowQuery, maxQuery] = buildToolQuery(searchParams);
+                break;
+            default:
+        }
     }
 
-    start = (page - 1) * pageLimit
-    end = start + pageLimit;
-    return NextResponse.json({products: returnProducts.slice(start, end), meta:{page:page, maxPages: maxPages, pageLimit: pageLimit, sortBy: sortby, sortOrder: sortorder}}, {status: 200});
+    if (maxQuery !== "") {
+        const maxRows: number = await new Promise((resolve, reject) => {
+            db.get(maxQuery, [], (err, row:{maxRows:number}) => {
+                if (err) {
+                    reject(0);
+                } else {
+                    resolve(row['maxRows']);
+                }
+            })
+        });
+
+        maxPages = Math.ceil(maxRows/pageLimit);
+    }
+
+    //Build the LIMIT clause
+    page = page > maxPages ? 1 : page;
+    rowQuery += ` LIMIT ${pageLimit} OFFSET ${pageLimit*(page-1)}`;
+
+    try {
+        const rows: ProductType[] = await new Promise((resolve, reject) => {
+            db.all(rowQuery, (err, rows:ProductType[]) => {
+                if (err) {
+                    reject([]);
+                } else {
+                    resolve(rows);
+                }
+            });
+        });
+
+        return NextResponse.json({products: rows, meta:{page:page, maxPages: maxPages, pageLimit: pageLimit}}, {status: 200});
+    } catch (e) {
+        return NextResponse.json({products: [], meta:{page:1, maxPages: 1, pageLimit: pageLimit}}, {status: 200});
+    }
 }
